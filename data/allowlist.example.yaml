@@ -1,0 +1,9 @@
+# Example allowlist — copy to allowlist.yaml and customize.
+# Matching findings are marked acknowledged (not open risk).
+version: 1
+rule_ids: []
+# - sniff.capture_process
+path_substrings: []
+# - /Applications/Wireshark.app
+process_names: []
+# - Wireshark

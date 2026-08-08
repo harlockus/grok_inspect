@@ -1,0 +1,23 @@
+{
+  "elevated": false,
+  "host": {"os_family": "darwin", "hostname": "test-host"},
+  "results": [
+    {
+      "name": "sniff_surface",
+      "status": "full",
+      "evidence": {
+        "capture_processes": [{"name": "tcpdump", "pid": 999}],
+        "promisc_interfaces": ["en0"]
+      }
+    },
+    {
+      "name": "process",
+      "status": "full",
+      "evidence": {
+        "processes": [
+          {"pid": 1, "name": "launchd", "path": "/sbin/launchd", "cmdline": "launchd"}
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+model:
+  id: grok-4.5
+  reasoning_effort: high
+  temperature: 0.2
+
+scan:
+  collector_timeout_sec: 45
+  payload_max_chars: 150000
+
+reports:
+  dir: reports
