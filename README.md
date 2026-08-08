@@ -32,8 +32,8 @@ It does **not** dump passwords/cookies/keys, capture live packets, or kill proce
 
 ```bash
 # 1. Install
-git clone <your-repo-url> GROK_INSPECT
-cd GROK_INSPECT
+git clone https://github.com/harlockus/grok_inspect.git
+cd grok_inspect
 bash scripts/install.sh
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
