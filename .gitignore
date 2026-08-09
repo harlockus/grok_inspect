@@ -52,14 +52,8 @@ Thumbs.db
 # Local allowlists with private paths
 data/allowlist.yaml
 
-# Marketing renders & build intermediates (keep local)
-marketing/*.mp4
-marketing/*.png
-marketing/audio/
-marketing/frames/
-marketing/segments/
-marketing/concat.txt
-marketing/video_silent.mp4
-!marketing/.gitkeep
+# Marketing is private / local only — never publish to GitHub
+marketing/
+
 
 
