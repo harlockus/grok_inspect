@@ -28,7 +28,8 @@ class ModelConfig(BaseModel):
 
 class ScanConfig(BaseModel):
     collector_timeout_sec: int = 45
-    payload_max_chars: int = 150_000
+    payload_max_chars: int = 350_000
+
 
 
 class ReportsConfig(BaseModel):
@@ -258,10 +259,11 @@ def load_settings(
     settings.scan.collector_timeout_sec = clamp_timeout(
         settings.scan.collector_timeout_sec
     )
-    # Cap Grok payload size hard limits
+    # Cap Grok payload size (allow comprehensive packages; still hard-capped)
     settings.scan.payload_max_chars = max(
-        10_000, min(int(settings.scan.payload_max_chars or 150_000), 400_000)
+        20_000, min(int(settings.scan.payload_max_chars or 350_000), 500_000)
     )
+
     if not settings.model.reasoning_effort:
         settings.model.reasoning_effort = "high"
     if settings.model.reasoning_effort.lower() not in {"high", "medium", "low"}:

@@ -3,77 +3,454 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Grok Inspect Report</title>
+  <title>Grok Inspect — Executive Host Risk Brief</title>
   <style>
-    :root { --bg:#0b1020; --card:#141b2d; --text:#e8eefc; --muted:#9aa8c7; --crit:#ff4d6d; --high:#ff8c42; --med:#ffd166; --low:#7bdff2; --info:#8d99ae; }
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; line-height: 1.5; }
-    h1,h2,h3 { margin-top: 1.4rem; }
-    .meta { color: var(--muted); margin-bottom: 1.5rem; }
-    .card { background: var(--card); border-radius: 12px; padding: 1rem 1.25rem; margin: 0.75rem 0; border: 1px solid #243049; }
+    :root {
+      --bg: #f4f6fa;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --brand: #0ea5e9;
+      --brand-dark: #0369a1;
+      --crit: #dc2626;
+      --high: #ea580c;
+      --med: #ca8a04;
+      --low: #0891b2;
+      --info: #64748b;
+      --ok: #059669;
+      --sidebar: #0b1220;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #0b1220 0%, #0f2744 55%, #0c4a6e 100%);
+      color: #e8f4ff;
+      padding: 2.25rem 2.5rem 2rem;
+      border-bottom: 4px solid var(--brand);
+    }
+    .hero h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.85rem;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+    }
+    .hero .sub {
+      opacity: 0.9;
+      font-size: 0.98rem;
+      max-width: 60rem;
+    }
+    .badges { margin-top: 1.1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .badge.risk-critical { background: #7f1d1d; border-color: #fca5a5; }
+    .badge.risk-high { background: #7c2d12; border-color: #fdba74; }
+    .badge.risk-medium { background: #713f12; border-color: #fde047; }
+    .badge.risk-low { background: #164e63; border-color: #67e8f9; }
+    .badge.risk-informational { background: #334155; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    .grid-kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin: -1.75rem 0 1.5rem;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .kpi .lbl { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .kpi .val { font-size: 1.45rem; font-weight: 700; margin-top: 0.2rem; }
+    .kpi .val.crit { color: var(--crit); }
+    .kpi .val.high { color: var(--high); }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem 1.4rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    }
+    section h2 {
+      margin: 0 0 0.85rem;
+      font-size: 1.15rem;
+      color: var(--brand-dark);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.55rem;
+    }
+    section h3 { margin: 1.1rem 0 0.45rem; font-size: 1rem; color: #1e293b; }
+    p { margin: 0.4rem 0 0.7rem; }
+    ul, ol { margin: 0.35rem 0 0.7rem; padding-left: 1.25rem; }
+    li { margin: 0.25rem 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 0.75rem;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:nth-child(even) td { background: #fafbfc; }
     .sev-critical { border-left: 4px solid var(--crit); }
     .sev-high { border-left: 4px solid var(--high); }
     .sev-medium { border-left: 4px solid var(--med); }
     .sev-low { border-left: 4px solid var(--low); }
     .sev-info { border-left: 4px solid var(--info); }
-    code { background: #0f1524; padding: 0.1rem 0.35rem; border-radius: 4px; }
-    ul { padding-left: 1.2rem; }
-    footer { color: var(--muted); margin-top: 2rem; font-size: 0.9rem; }
+    .finding {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin: 0.55rem 0;
+      background: #fff;
+    }
+    .finding .meta { color: var(--muted); font-size: 0.85rem; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #f1f5f9;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.86em;
+    }
+    .muted { color: var(--muted); }
+    .callout {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin: 0.6rem 0;
+    }
+    .callout.warn {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      padding: 0 1.25rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .phase {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #075985;
+      margin-right: 0.35rem;
+    }
+    @media print {
+      body { background: #fff; }
+      .hero { break-after: avoid; }
+      section { box-shadow: none; break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
-  <h1>Grok Inspect Report</h1>
-  <div class="meta">
-    <div><strong>Host:</strong> {{ result.host.get('hostname') }} ({{ result.host.get('os_family') }} {{ result.host.get('release') }})</div>
-    <div><strong>Elevated:</strong> {{ result.elevated }}</div>
-    <div><strong>Window:</strong> {{ result.started_at }} → {{ result.finished_at }}</div>
-    <div><strong>Max severity:</strong> {{ result.score.max_severity.value }} · open findings: {{ result.score.open_finding_count }}</div>
-    <div><strong>Tool:</strong> grok-inspect {{ result.tool_version }}</div>
-  </div>
-
-  <h2>Coverage</h2>
-  <div class="card">
-    <ul>
-    {% for c in result.coverage %}
-      <li><code>{{ c.collector }}</code>: <strong>{{ c.status.value }}</strong>{% if c.detail %} — {{ c.detail }}{% endif %}</li>
-    {% endfor %}
-    </ul>
-  </div>
-
-  <h2>Findings</h2>
+  {% set g = result.grok %}
   {% set open_f = result.findings | selectattr('acknowledged', 'equalto', false) | list %}
-  {% if not open_f %}
-    <div class="card">No open findings.</div>
-  {% endif %}
-  {% for f in open_f %}
-    <div class="card sev-{{ f.severity.value }}">
-      <h3>[{{ f.severity.value | upper }}] {{ f.title }}</h3>
-      <div><code>{{ f.id }}</code> · {{ f.category }} · confidence {{ f.confidence }}</div>
-      <p>{{ f.summary }}</p>
-      {% if f.remediation_hint %}<p><em>Hint:</em> {{ f.remediation_hint }}</p>{% endif %}
-    </div>
-  {% endfor %}
+  {% set risk = (g.risk_rating or result.score.max_severity.value) | string %}
+  {% set risk_class = risk | lower | replace(' ','') %}
 
-  <h2>Grok Analysis</h2>
-  <div class="card">
-  {% if result.grok.available %}
-    <p><strong>Model:</strong> {{ result.grok.model_id }} (reasoning_effort={{ result.grok.reasoning_effort }})</p>
-    <h3>Executive summary</h3>
-    <p>{{ result.grok.executive_summary }}</p>
-    <h3>Threat narrative</h3>
-    <p>{{ result.grok.threat_narrative }}</p>
-    {% if result.grok.remediation_plan %}
-    <h3>Remediation plan</h3>
-    <ol>
-      {% for step in result.grok.remediation_plan %}
-      <li>{{ step }}</li>
+  <header class="hero">
+    <h1>Executive Host Risk Brief</h1>
+    <div class="sub">
+      Grok Inspect defensive assessment for
+      <strong>{{ result.host.get('hostname') or 'host' }}</strong>
+      · {{ result.host.get('os_family') }} {{ result.host.get('release') }}
+    </div>
+    <div class="badges">
+      <span class="badge risk-{{ risk_class }}">Risk: {{ risk }}</span>
+      <span class="badge">Max heuristic: {{ result.score.max_severity.value }}</span>
+      <span class="badge">Open findings: {{ result.score.open_finding_count }}</span>
+      <span class="badge">Elevated: {{ 'Yes' if result.elevated else 'No' }}</span>
+      {% if g.available %}
+      <span class="badge">{{ g.model_id }} · {{ g.reasoning_effort }}</span>
+      {% else %}
+      <span class="badge">Heuristics only</span>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid-kpi">
+      <div class="kpi"><div class="lbl">Critical</div><div class="val crit">{{ result.score.counts.get('critical', 0) }}</div></div>
+      <div class="kpi"><div class="lbl">High</div><div class="val high">{{ result.score.counts.get('high', 0) }}</div></div>
+      <div class="kpi"><div class="lbl">Medium</div><div class="val">{{ result.score.counts.get('medium', 0) }}</div></div>
+      <div class="kpi"><div class="lbl">Low</div><div class="val">{{ result.score.counts.get('low', 0) }}</div></div>
+      <div class="kpi"><div class="lbl">Info</div><div class="val">{{ result.score.counts.get('info', 0) }}</div></div>
+      {% if g.available and g.confidence is not none %}
+      <div class="kpi"><div class="lbl">Grok confidence</div><div class="val">{{ '%.0f'|format(g.confidence * 100) }}%</div></div>
+      {% endif %}
+    </div>
+
+    <section>
+      <h2>1. Executive brief</h2>
+      {% if g.available %}
+        {% if g.situation_overview %}
+        <h3>Situation overview</h3>
+        <p>{{ g.situation_overview }}</p>
+        {% endif %}
+        <h3>Summary for CISO / CIO</h3>
+        <p>{{ g.executive_summary or '—' }}</p>
+        {% if g.business_impact %}
+        <h3>Business impact</h3>
+        <p>{{ g.business_impact }}</p>
+        {% endif %}
+        {% if g.board_talking_points %}
+        <h3>Board / leadership talking points</h3>
+        <ul>
+          {% for bp in g.board_talking_points %}
+          <li>{{ bp }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      {% else %}
+        <div class="callout warn">
+          Grok analysis unavailable: {{ g.error or 'skipped / no API key' }}.
+          Heuristic findings below remain actionable for triage.
+        </div>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>2. Executive actions — decide &amp; direct</h2>
+      {% if g.available and g.executive_actions %}
+      <table>
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Owner</th>
+            <th>Timeline</th>
+            <th>Action</th>
+            <th>Success criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in g.executive_actions %}
+          <tr>
+            <td><strong>{{ a.get('priority', '—') }}</strong></td>
+            <td>{{ a.get('owner_role') or a.get('owner') or '—' }}</td>
+            <td>{{ a.get('timeline', '—') }}</td>
+            <td>{{ a.get('action', '—') }}</td>
+            <td>{{ a.get('success_criteria', '—') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% elif g.available and g.remediation_plan %}
+      <ol>
+        {% for step in g.remediation_plan %}
+        <li>{{ step }}</li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p class="muted">No executive actions generated for this run.</p>
+      {% endif %}
+    </section>
+
+    {% if g.available and g.plan_30_60_90 %}
+    <section>
+      <h2>3. 30 / 60 / 90 day plan</h2>
+      {% for key, label in [('0_30_days','0–30 days'), ('30_60_days','30–60 days'), ('60_90_days','60–90 days')] %}
+        {% set items = g.plan_30_60_90.get(key) or [] %}
+        {% if items %}
+        <h3>{{ label }}</h3>
+        <ul>
+          {% for it in items %}
+          <li>{{ it }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
       {% endfor %}
-    </ol>
+    </section>
     {% endif %}
-  {% else %}
-    <p>Grok analysis unavailable: {{ result.grok.error or 'skipped / no API key' }}</p>
-  {% endif %}
+
+    <section>
+      <h2>4. Detailed technical actions</h2>
+      {% if g.available and g.detailed_actions %}
+        {% for a in g.detailed_actions %}
+        <div class="finding">
+          <div>
+            {% if a.get('phase') %}<span class="phase">{{ a.get('phase') }}</span>{% endif %}
+            <strong>{{ a.get('title') or 'Action' }}</strong>
+          </div>
+          <div class="meta">
+            Owner: {{ a.get('owner_role') or a.get('owner') or '—' }}
+            {% if a.get('effort') %} · Effort: {{ a.get('effort') }}{% endif %}
+          </div>
+          {% if a.get('steps') %}
+          <ol>
+            {% for s in a.get('steps') %}
+            <li>{{ s }}</li>
+            {% endfor %}
+          </ol>
+          {% endif %}
+          {% if a.get('verification') %}
+          <p><strong>Verification:</strong> {{ a.get('verification') }}</p>
+          {% endif %}
+          {% if a.get('related_finding_ids') %}
+          <p class="meta">Related:
+            {% for id in a.get('related_finding_ids')[:12] %}
+            <code>{{ id }}</code>
+            {% endfor %}
+          </p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <ul>
+          {% for f in open_f[:20] %}
+            {% if f.remediation_hint %}
+            <li><code>{{ f.id }}</code> — {{ f.remediation_hint }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    {% if g.available and g.threat_narrative %}
+    <section>
+      <h2>5. Threat narrative</h2>
+      <p>{{ g.threat_narrative }}</p>
+      {% if g.attack_path %}
+      <h3>Hypothesized attack path</h3>
+      <ol>
+        {% for step in g.attack_path %}
+        <li>{{ step }}</li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      {% if g.likely_attacker_goals %}
+      <h3>Likely attacker goals</h3>
+      <ul>
+        {% for goal in g.likely_attacker_goals %}
+        <li>{{ goal }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if g.available and g.prioritized_findings %}
+    <section>
+      <h2>6. Prioritized findings (Grok)</h2>
+      {% for pf in g.prioritized_findings %}
+      <div class="finding sev-{{ (pf.get('severity') or 'info') | lower }}">
+        <strong>#{{ pf.get('rank', '—') }} · [{{ (pf.get('severity') or '') | upper }}] {{ pf.get('title') or pf.get('id') }}</strong>
+        <div class="meta"><code>{{ pf.get('id') }}</code></div>
+        {% if pf.get('rationale') %}<p>{{ pf.get('rationale') }}</p>{% endif %}
+        {% if pf.get('business_relevance') %}<p><em>Business:</em> {{ pf.get('business_relevance') }}</p>{% endif %}
+        {% if pf.get('false_positive_notes') %}<p class="muted"><em>FP notes:</em> {{ pf.get('false_positive_notes') }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>7. Full finding catalog (heuristics)</h2>
+      {% if not open_f %}
+      <p class="muted">No open findings.</p>
+      {% endif %}
+      {% for f in open_f %}
+      <div class="finding sev-{{ f.severity.value }}">
+        <strong>[{{ f.severity.value | upper }}] {{ f.title }}</strong>
+        <div class="meta"><code>{{ f.id }}</code> · {{ f.category }} · confidence {{ f.confidence }}</div>
+        <p>{{ f.summary }}</p>
+        {% if f.remediation_hint %}<p><em>Local hint:</em> {{ f.remediation_hint }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>8. Coverage &amp; residual risk</h2>
+      <h3>Collector coverage</h3>
+      <table>
+        <thead><tr><th>Collector</th><th>Status</th><th>Detail</th></tr></thead>
+        <tbody>
+        {% for c in result.coverage %}
+          <tr>
+            <td><code>{{ c.collector }}</code></td>
+            <td>{{ c.status.value }}</td>
+            <td class="muted">{{ c.detail }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if g.available and g.coverage_assessment %}
+      <h3>Coverage assessment</h3>
+      <p>{{ g.coverage_assessment }}</p>
+      {% endif %}
+      {% if g.available and g.residual_risk %}
+      <h3>Residual risk</h3>
+      <p>{{ g.residual_risk }}</p>
+      {% endif %}
+      {% if g.available and g.assumptions_and_limits %}
+      <h3>Assumptions &amp; limits</h3>
+      <ul>
+        {% for a in g.assumptions_and_limits %}
+        <li>{{ a }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if g.available and g.questions_for_operator %}
+      <h3>Questions for the operator</h3>
+      <ul>
+        {% for q in g.questions_for_operator %}
+        <li>{{ q }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>9. Metadata</h2>
+      <p class="muted">
+        Window: {{ result.started_at }} → {{ result.finished_at }} ·
+        Tool: grok-inspect {{ result.tool_version }}
+        {% if g.available and g.latency_s is not none %} · Grok latency: {{ '%.1f'|format(g.latency_s) }}s{% endif %}
+        {% if g.available and g.usage_summary %} · {{ g.usage_summary }}{% endif %}
+      </p>
+    </section>
   </div>
 
-  <footer>Generated by grok-inspect. Defensive inspection only. Protect this report — it may contain sensitive host metadata.</footer>
+  <footer>
+    Generated by <strong>grok-inspect</strong> · Defensive host inspection only ·
+    Protect this brief — it may contain sensitive host metadata · Not a substitute for full IR investigation.
+  </footer>
 </body>
 </html>

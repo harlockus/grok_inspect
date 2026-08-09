@@ -43,3 +43,6 @@ def test_build_payload_strips_home():
     text = build_grok_payload(result, max_chars=50_000, home=home)
     assert "/Users/alice" not in text
     assert "~/secret/file" in text
+    assert "findings_open" in text
+    assert "CISO_CIO_IR" in text
+

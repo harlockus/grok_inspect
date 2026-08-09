@@ -33,16 +33,28 @@ def print_summary(result: ScanResult, out_dir: Path, console: Console | None = N
         f"Open findings: {result.score.open_finding_count}"
     )
     if result.grok.available:
+        risk = result.grok.risk_rating or "n/a"
         console.print(
             f"Grok: [green]ok[/green] model={result.grok.model_id} "
-            f"effort={result.grok.reasoning_effort}"
+            f"effort={result.grok.reasoning_effort}  "
+            f"risk=[bold]{risk}[/bold]"
         )
         if result.grok.executive_summary:
-            console.print(f"[bold]Summary:[/bold] {result.grok.executive_summary[:400]}")
+            console.print(
+                f"[bold]Executive summary:[/bold] {result.grok.executive_summary[:500]}"
+            )
+        n_exec = len(result.grok.executive_actions or [])
+        n_detail = len(result.grok.detailed_actions or [])
+        if n_exec or n_detail:
+            console.print(
+                f"Actions: [cyan]{n_exec}[/cyan] executive · "
+                f"[cyan]{n_detail}[/cyan] detailed technical"
+            )
     else:
         console.print(
             f"Grok: [dim]unavailable[/dim] ({result.grok.error or 'skipped'})"
         )
+
 
     table = Table(title="Top findings", show_lines=False)
     table.add_column("Sev", style="bold")

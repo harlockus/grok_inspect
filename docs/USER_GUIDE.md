@@ -1,41 +1,52 @@
-# Grok Inspect — User Guide
+# Grok Inspect — Comprehensive User Guide
 
-Complete guide for installing, configuring, running, and interpreting results.
+Professional documentation for operators, IR leads, and security leadership.
 
 ## Table of contents
 
-1. [What it is](#1-what-it-is)
-2. [Requirements](#2-requirements)
-3. [Install](#3-install)
-4. [API key setup](#4-api-key-setup-spacexai)
-5. [Commands](#5-commands)
-6. [Running scans](#6-running-scans)
-7. [Elevated (sudo) scans](#7-elevated-sudo-scans)
-8. [Reading reports](#8-reading-reports)
-9. [Allowlists](#9-allowlists)
-10. [Exit codes](#10-exit-codes)
-11. [Troubleshooting](#11-troubleshooting)
-12. [Security practices](#12-security-practices)
-13. [Architecture overview](#13-architecture-overview)
+1. [Product overview](#1-product-overview)  
+2. [Requirements](#2-requirements)  
+3. [Installation](#3-installation)  
+4. [API key & Grok configuration](#4-api-key--grok-configuration)  
+5. [Operating modes (Standard vs Pro)](#5-operating-modes-standard-vs-pro)  
+6. [Command reference](#6-command-reference)  
+7. [Running scans](#7-running-scans)  
+8. [Elevated / Pro mode (sudo)](#8-elevated--pro-mode-sudo)  
+9. [Executive reports (CISO / CIO)](#9-executive-reports-ciso--cio)  
+10. [Interpreting findings](#10-interpreting-findings)  
+11. [Allowlists](#11-allowlists)  
+12. [Exit codes & automation](#12-exit-codes--automation)  
+13. [Troubleshooting](#13-troubleshooting)  
+14. [Security practices](#14-security-practices)  
+15. [Architecture](#15-architecture)  
 
 ---
 
-## 1. What it is
+## 1. Product overview
 
-**Grok Inspect** (`grok-inspect`) is a **manual CLI** that inspects a local Mac, Windows, or Linux host for:
+**Grok Inspect** is an **on-demand host inspection agent**. On each run it:
 
-- Network sniffing / packet-capture surface  
-- Info-stealing indicators  
-- Suspicious processes, persistence, posture, accounts, and more  
+1. Probes OS and privilege level  
+2. Executes cross-platform **collectors** (network, sniff surface, process, persistence, stealer indicators, accounts, filesystem, posture, logs, peripherals)  
+3. Scores **findings** with deterministic **heuristics**  
+4. Optionally escalates a **redacted**, comprehensive package to **Grok 4.5** (`reasoning_effort=high`) via SpaceXAI **`xai-sdk`**  
+5. Writes a **CISO/CIO-grade brief** (Markdown + HTML + JSON) plus a terminal summary  
 
-It:
+### Design principles
 
-1. Collects host evidence locally  
-2. Scores findings with **deterministic heuristics**  
-3. Optionally sends a **redacted** summary to **Grok 4.5** (`reasoning_effort=high`) via the official SpaceXAI **`xai-sdk`**  
-4. Writes **CLI + Markdown + JSON + HTML** reports  
+| Principle | Meaning |
+|-----------|---------|
+| Ground truth in heuristics | Grok prioritizes and narrates; it does not invent detections |
+| Dual-track actions | Leadership decisions **and** engineer-executable steps |
+| Honest coverage | Limited collectors are reported, not hidden |
+| Secure by design | Redaction, no secret dumps, no auto-remediation |
 
-It does **not** kill processes, dump passwords, or auto-remediate.
+### Not in scope
+
+- Continuous monitoring / EDR replacement  
+- Live packet capture pipelines  
+- Password, cookie, keychain, or LSASS extraction  
+- Automatic process kill or quarantine  
 
 ---
 
@@ -44,230 +55,271 @@ It does **not** kill processes, dump passwords, or auto-remediate.
 | Item | Requirement |
 |------|-------------|
 | OS | macOS, Linux, or Windows |
-| Python | 3.11+ (3.12–3.14 tested) |
-| Network | Only if using Grok analysis |
+| Python | **3.11+** (3.12–3.14 supported) |
+| Network | Required only for Grok analysis |
 | API key | `XAI_API_KEY` from [console.x.ai](https://console.x.ai/) for Grok mode |
-| Privileges | User-level works; **admin/root** for deeper coverage |
+| Privileges | User for **Standard**; admin/root for **Pro** depth |
 
 ---
 
-## 3. Install
+## 3. Installation
 
-### Recommended (all platforms with bash)
+### Recommended (production-reliable)
 
 ```bash
-cd /path/to/GROK_INSPECT
+git clone https://github.com/harlockus/grok_inspect.git
+cd grok_inspect
 bash scripts/install.sh
-source .venv/bin/activate    # Windows: .venv\Scripts\activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+grok-inspect version
 ```
 
 ### Manual
 
 ```bash
-cd /path/to/GROK_INSPECT
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install ".[dev]"
 ```
 
-### Important: do not use editable install on macOS + Python 3.14
+### Critical note — macOS + Python 3.14
+
+**Do not** use:
 
 ```bash
-# BAD on macOS/Python 3.14 — often breaks with ModuleNotFoundError
 pip install -e .
 ```
 
-Use `scripts/install.sh` or plain `pip install .` instead.  
-Root cause: setuptools creates a hidden `__editable__.*.pth` that Python 3.14 skips (`UF_HIDDEN`).
+Editable installs may create a **hidden** `__editable__.*.pth` that Python 3.14 **skips**, causing:
 
-### Verify install
+```text
+ModuleNotFoundError: No module named 'grok_inspect'
+```
+
+**Fix:**
 
 ```bash
-grok-inspect version
-# → grok-inspect 0.1.0
+bash scripts/install.sh
+# or: pip install .
+```
+
+### After `git pull`
+
+Reinstall so the CLI entry point matches source:
+
+```bash
+source .venv/bin/activate
+pip install .
 ```
 
 ---
 
-## 4. API key setup (SpaceXAI)
+## 4. API key & Grok configuration
 
-**Store the key only in project `.env` (gitignored).**
+### Policy
+
+| Location | Allowed |
+|----------|---------|
+| Project `.env` | **Yes — only supported secret store** |
+| `config/*.yaml` | **No** (stripped if present) |
+| Git commits / reports | **No** |
+
+### Setup
 
 ```bash
 cp .env.example .env
-# Edit .env:
-#   XAI_API_KEY=xai-your-real-key
 ```
 
-Never put the key in:
+Edit `.env`:
 
-- `config/*.yaml`  
-- source code  
-- Git commits  
-- chat / tickets  
+```bash
+XAI_API_KEY=xai-your-real-key
+# Optional:
+# XAI_MODEL=grok-4.5
+```
 
-Check without printing the full key:
+### Verify (never prints full key)
 
 ```bash
 grok-inspect doctor
 ```
 
-Expected when ready:
+Healthy output includes:
 
 ```text
 .env file: found
 XAI_API_KEY: present
-Source: loaded from .../GROK_INSPECT/.env
 Grok analysis ready for `grok-inspect scan`
 ```
 
-Optional in `.env`:
+### Model policy
 
-```bash
-# XAI_MODEL=grok-4.5
-```
+| Setting | Value |
+|---------|--------|
+| Model | `grok-4.5` (flagship) |
+| Reasoning | `high` (always for analysis) |
+| Fallback model | **None** — failure → heuristics-only report |
+| Offline | `--no-grok` |
 
-**Model policy:** analysis uses **`grok-4.5`** with **`reasoning_effort=high`**. No silent fallback to mini/fast models. Use `--no-grok` to skip the API.
-
-If both shell `export XAI_API_KEY=...` and `.env` have a key, **`.env` wins**.
+If both shell `export XAI_API_KEY` and `.env` define a key, **`.env` wins**.
 
 ---
 
-## 5. Commands
+## 5. Operating modes (Standard vs Pro)
 
-| Command | Purpose |
-|---------|---------|
-| `grok-inspect doctor` | Verify project root, `.env`, key, model |
-| `grok-inspect scan` | Run a full host inspection |
+```text
+┌──────────────────────┐     ┌──────────────────────────────┐
+│   STANDARD MODE      │     │   PRO MODE (ELEVATED)        │
+│   User context       │     │   root / Administrator       │
+│   Fast triage        │     │   Maximum collector depth    │
+│   Honest “limited”   │     │   Prefer for CISO briefs     │
+│   coverage notes     │     │   sudo .venv/bin/grok-inspect│
+└──────────────────────┘     └──────────────────────────────┘
+```
+
+| Dimension | Standard | **Pro (Elevated)** |
+|-----------|----------|---------------------|
+| Invocation | `grok-inspect scan -v` | `sudo .venv/bin/grok-inspect scan -v` |
+| Process enumeration | Best-effort | Deeper (other users, services) |
+| Drivers / deep posture | Partial | Stronger where OS allows |
+| Report field `Elevated` | `No` | `Yes` |
+| Recommendation | Day-to-day | Pre-board / IR evidence packs |
+
+---
+
+## 6. Command reference
+
+| Command | Description |
+|---------|-------------|
+| `grok-inspect doctor` | Health check: project root, `.env`, key, model |
+| `grok-inspect scan` | Full host scan |
+| `grok-inspect scan -v` | Verbose collector progress |
+| `grok-inspect scan --no-grok` | Heuristics only (no API) |
+| `grok-inspect scan --out DIR` | Report directory |
+| `grok-inspect scan --allowlist PATH` | Allowlist YAML |
+| `grok-inspect scan --timeout SEC` | Per-collector timeout (5–300) |
 | `grok-inspect version` | Print version |
-| `grok-inspect --help` | Top-level help |
-| `grok-inspect scan --help` | Scan flags |
-
-Also:
-
-```bash
-python -m grok_inspect scan -v
-```
+| `python -m grok_inspect scan -v` | Module invocation |
 
 ---
 
-## 6. Running scans
+## 7. Running scans
 
-### Everyday full scan (heuristics + Grok)
+### Standard + Grok (default professional path)
 
 ```bash
-cd /path/to/GROK_INSPECT
+cd /path/to/grok_inspect
 source .venv/bin/activate
 grok-inspect scan -v
 ```
 
-### Offline / no API
+### Offline / air-gapped heuristics
 
 ```bash
-grok-inspect scan --no-grok -v
+grok-inspect scan --no-grok -v --out ./reports
 ```
 
-### Custom report directory
+### Custom output directory
 
 ```bash
-grok-inspect scan -v --out ./reports
+grok-inspect scan -v --out /secure/ir/cases/2026-08-09
 ```
 
 ### Allowlist known-good tools
 
 ```bash
 cp data/allowlist.example.yaml data/allowlist.yaml
-# edit allowlist.yaml
+# edit rule_ids / paths / process_names
 grok-inspect scan -v --allowlist data/allowlist.yaml
 ```
 
-(`data/allowlist.yaml` is gitignored so private paths stay local.)
-
-### Timeout
-
-```bash
-grok-inspect scan --timeout 60 -v
-```
-
-### All scan flags
-
-| Flag | Meaning |
-|------|---------|
-| `-v` / `--verbose` | Collector progress |
-| `--no-grok` | Heuristics only |
-| `--out DIR` | Report directory |
-| `--allowlist PATH` | Allowlist YAML |
-| `--timeout SEC` | Per-collector timeout (5–300) |
+(`data/allowlist.yaml` is gitignored.)
 
 ---
 
-## 7. Elevated (sudo) scans
-
-Many signals need admin/root (other users’ processes, some services, deeper network ownership).
+## 8. Elevated / Pro mode (sudo)
 
 ### macOS / Linux
 
-Use the **venv binary** (so root uses the right package):
+Always call the **venv executable** so privileges and package path stay aligned:
 
 ```bash
-cd /path/to/GROK_INSPECT
+cd /path/to/grok_inspect
+
+# Pro mode — full scan + Grok CISO brief
 sudo .venv/bin/grok-inspect scan -v
-```
 
-Heuristics only:
-
-```bash
+# Pro mode — offline
 sudo .venv/bin/grok-inspect scan --no-grok -v
 ```
 
+**Avoid** `sudo grok-inspect` unless that name is on root’s `PATH` (often it is not).
+
 ### Windows
 
-Run PowerShell or Terminal **as Administrator**, activate the venv, then:
+1. Start **PowerShell** or **Windows Terminal** as **Administrator**  
+2. Activate the project venv  
+3. Run:
 
 ```powershell
 grok-inspect scan -v
 ```
 
-Without elevation the report still works and lists **coverage** findings explaining what was limited.
+### Confirm elevation
+
+In CLI or report cover:
+
+- **Elevated scan: Yes**  
+- Fewer `coverage.not_elevated` / `*.limited` entries  
 
 ---
 
-## 8. Reading reports
+## 9. Executive reports (CISO / CIO)
 
-After a scan, open:
+### Artifacts
 
 | File | Use |
 |------|-----|
-| `reports/latest.md` | Human-readable narrative |
-| `reports/latest.html` | Browser-friendly brief |
-| `reports/latest.json` | Automation / SIEM pipelines |
-| `reports/grok-inspect-<timestamp>.*` | Archived run |
+| `reports/latest.html` | Preferred executive view — browser / PDF print |
+| `reports/latest.md` | Shareable brief in tickets / email |
+| `reports/latest.json` | Machine-readable full object |
+| `reports/grok-inspect-<timestamp>.*` | Immutable run archive |
 
-### Report sections
+### Brief structure
 
-1. **Host / elevation / score**  
-2. **Coverage** — which collectors ran full / limited / skipped  
-3. **Findings** — severity, rule id, summary, remediation hint  
-4. **Grok analysis** (if enabled) — executive summary, narrative, ordered remediation  
+1. **Cover** — host, elevation, heuristic max severity, **Grok risk rating**  
+2. **Severity scorecard** — critical → info  
+3. **Executive brief** — situation, summary, business impact, board talking points  
+4. **Executive actions** — P0–P3, owner role, timeline, success criteria  
+5. **30 / 60 / 90 day plan**  
+6. **Detailed technical actions** — phase, steps, verification, related finding IDs  
+7. **Threat narrative** — attack path, goals  
+8. **Prioritized findings (Grok)**  
+9. **Full heuristic catalog**  
+10. **Coverage & residual risk**  
 
-### Severity guide
+### What Grok receives
 
-| Severity | Meaning (approx.) |
-|----------|-------------------|
-| critical | Strong compromise / stealer / MITM chain indicators |
-| high | Promisc mode, dangerous process patterns, weak posture |
-| medium | Suspicious hosts/proxy, notable anomalies |
-| low | Weaker signals, volume/noise |
-| info | Coverage notes, installed tools presence |
-
-Findings are **heuristics**, not courtroom proof. Grok prioritizes and explains; it does not invent new detections.
+A **comprehensive redacted package**: open findings (severity-sorted), coverage, collector status, and collector evidence digests — not passwords, cookies, or private keys. Payload size defaults to a large CISO-oriented budget (`payload_max_chars` in `config/default.yaml`).
 
 ---
 
-## 9. Allowlists
+## 10. Interpreting findings
 
-Use when legitimate tools (corp proxy, Wireshark lab, remote support) create expected noise.
+| Severity | Guidance |
+|----------|----------|
+| **critical** | Immediate leadership attention; possible active compromise path |
+| **high** | Urgent validation (e.g. promisc interfaces, dangerous process patterns) |
+| **medium** | Investigate; may be misconfig or weak signal |
+| **low** | Hygiene / volume signals |
+| **info** | Coverage and inventory presence |
+
+Grok may mark authorized tools (e.g. Wireshark) as **authorized-but-risky** — leadership still owns policy.
+
+---
+
+## 11. Allowlists
 
 ```yaml
 # data/allowlist.yaml
@@ -280,31 +332,32 @@ process_names:
   - Wireshark
 ```
 
-Allowlisted findings are **acknowledged** (still visible, not open risk).
+Allowlisted items become **acknowledged** (visible, not open risk).
 
 ---
 
-## 10. Exit codes
+## 12. Exit codes & automation
 
 | Code | Meaning |
 |------|---------|
-| `0` | Completed; max severity info/low (or clean) |
-| `1` | Completed; medium or high findings |
-| `2` | Scan error (bad path, crash) |
-| `3` | Completed; one or more **critical** findings |
+| `0` | Completed; max severity info/low |
+| `1` | Medium or high findings |
+| `2` | Error (config/path/crash) |
+| `3` | Critical findings |
 
-Useful in scripts:
+Example:
 
 ```bash
-grok-inspect scan --no-grok
-echo $?
+grok-inspect scan --no-grok -v
+code=$?
+if [ "$code" -ge 3 ]; then echo "CRITICAL"; fi
 ```
 
 ---
 
-## 11. Troubleshooting
+## 13. Troubleshooting
 
-### `ModuleNotFoundError: No module named 'grok_inspect'`
+### `ModuleNotFoundError: grok_inspect`
 
 ```bash
 bash scripts/install.sh
@@ -312,76 +365,71 @@ source .venv/bin/activate
 grok-inspect version
 ```
 
-Do **not** use `pip install -e .` on macOS Python 3.14+.
+### `doctor` — key missing
 
-### `doctor` says key missing
+1. Ensure `.env` exists in the project root  
+2. Set `XAI_API_KEY=xai-...` (placeholders like `your_key_here` are rejected)  
+3. Re-run `grok-inspect doctor`  
 
-1. `cp .env.example .env`  
-2. Set `XAI_API_KEY=xai-...` (no quotes required; placeholders like `your_key_here` are rejected)  
-3. `grok-inspect doctor`  
+### Grok unavailable in report
 
-### Grok section says unavailable
+- Missing key, `--no-grok`, or API/network failure  
+- Heuristic findings and local remediation hints still ship  
 
-- Missing key → add to `.env`  
-- Or you used `--no-grok`  
-- Or API/network error (heuristics reports still written)
-
-### sudo can’t find `grok-inspect`
+### `sudo` cannot find the CLI
 
 ```bash
-sudo /full/path/to/GROK_INSPECT/.venv/bin/grok-inspect scan -v
+sudo /full/path/to/grok_inspect/.venv/bin/grok-inspect scan -v
 ```
 
-### Coverage mostly “limited”
+### Many collectors limited
 
-Re-run elevated (section 7).
-
-### Permission errors under `reports/`
-
-Ensure the output directory is writable; avoid writing under system paths (tool blocks `/etc`, `/System`, etc.).
+Re-run in **Pro mode** (section 8).
 
 ---
 
-## 12. Security practices
+## 14. Security practices
 
-- **Defensive use only** — systems you own or are authorized to assess  
-- **Key only in `.env`** — never commit  
-- **Protect `reports/`** — host metadata  
-- **No secret dumping** by design  
-- **No auto-remediation** — operator acts on recommendations  
-- See [SECURITY.md](../SECURITY.md) for threat model and controls  
+- Defensive use only; authorized systems only  
+- Never commit `.env` or real `reports/*`  
+- Protect report storage (host metadata)  
+- Prefer Pro elevated scans for executive decision packs  
+- See [SECURITY.md](../SECURITY.md)  
 
 ---
 
-## 13. Architecture overview
+## 15. Architecture
 
 ```text
 scan
   → privilege / host probe
-  → collectors (network, sniff, process, persistence, stealer, …)
-  → heuristic rules + chain boosts
+  → collectors (parallel-safe sequential runner + timeouts)
+  → heuristics + chain boosts + allowlist
   → redaction
-  → Grok 4.5 high reasoning (optional)
-  → sanitize + write reports
+  → Grok 4.5 high (optional, comprehensive package)
+  → sanitize
+  → write CLI + MD + JSON + HTML
 ```
 
-Design details: [docs/superpowers/specs/2026-08-08-grok-inspect-design.md](superpowers/specs/2026-08-08-grok-inspect-design.md)
+Design detail: [docs/superpowers/specs/2026-08-08-grok-inspect-design.md](superpowers/specs/2026-08-08-grok-inspect-design.md)
 
 ---
 
 ## Quick reference card
 
 ```bash
-# Setup
+# Install
+git clone https://github.com/harlockus/grok_inspect.git && cd grok_inspect
 bash scripts/install.sh && source .venv/bin/activate
-cp .env.example .env   # add XAI_API_KEY
+cp .env.example .env   # set XAI_API_KEY
 grok-inspect doctor
 
-# Scan
+# Standard
 grok-inspect scan -v
-grok-inspect scan --no-grok -v
+
+# Pro (elevated)
 sudo .venv/bin/grok-inspect scan -v
 
-# Results
-open reports/latest.html   # or: less reports/latest.md
+# Reports
+open reports/latest.html
 ```

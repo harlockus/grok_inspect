@@ -100,15 +100,40 @@ class ScanScore(BaseModel):
 
 
 class GrokAnalysis(BaseModel):
+    """CISO/CIO-grade analysis from Grok 4.5."""
+
     available: bool = False
     model_id: str | None = None
     reasoning_effort: str | None = None
+
+    # Executive layer
     executive_summary: str = ""
+    situation_overview: str = ""
+    risk_rating: str = ""  # Critical | High | Medium | Low | Informational
+    business_impact: str = ""
+    board_talking_points: list[str] = Field(default_factory=list)
+
+    # Threat analysis
     threat_narrative: str = ""
-    prioritized_findings: list[dict[str, Any]] = Field(default_factory=list)
+    attack_path: list[str] = Field(default_factory=list)
     likely_attacker_goals: list[str] = Field(default_factory=list)
-    remediation_plan: list[str] = Field(default_factory=list)
+    prioritized_findings: list[dict[str, Any]] = Field(default_factory=list)
+
+    # Actions — dual track
+    executive_actions: list[dict[str, Any]] = Field(default_factory=list)
+    # {priority, owner_role, action, timeline, success_criteria, related_finding_ids}
+    detailed_actions: list[dict[str, Any]] = Field(default_factory=list)
+    # {phase, title, owner_role, steps[], verification, related_finding_ids, effort}
+    remediation_plan: list[str] = Field(default_factory=list)  # legacy flat list
+    plan_30_60_90: dict[str, list[str]] = Field(default_factory=dict)
+    # {"0_30_days": [...], "30_60_days": [...], "60_90_days": [...]}
+
+    # Assessment quality
+    coverage_assessment: str = ""
+    residual_risk: str = ""
     questions_for_operator: list[str] = Field(default_factory=list)
+    assumptions_and_limits: list[str] = Field(default_factory=list)
+
     confidence: float | None = None
     latency_s: float | None = None
     usage_summary: str = ""

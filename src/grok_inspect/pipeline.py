@@ -102,17 +102,27 @@ def run_scan(
             f"grok: key {settings.api_key_status()}; "
             f"model={settings.model.id} reasoning_effort={settings.model.reasoning_effort}"
         )
-        log("grok: analyzing …")
+        log("grok: analyzing (CISO brief, comprehensive package) …")
         home = os.path.expanduser("~")
-        result.grok = analyze_with_grok(result, settings, home=home)
+        # Pass richer collector evidence for comprehensive Grok analysis
+        collector_evidence = {
+            r.name: r.evidence for r in results if r.evidence
+        }
+        result.grok = analyze_with_grok(
+            result,
+            settings,
+            home=home,
+            collector_evidence=collector_evidence,
+        )
         log(
             "grok: "
             + (
-                "ok"
+                f"ok risk={result.grok.risk_rating or 'n/a'}"
                 if result.grok.available
                 else f"failed ({result.grok.error})"
             )
         )
+
     else:
         if not use_grok:
             reason = "disabled via --no-grok"

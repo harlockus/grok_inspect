@@ -5,7 +5,9 @@ model:
 
 scan:
   collector_timeout_sec: 45
-  payload_max_chars: 150000
+  # Larger package for CISO-grade Grok briefs (still redacted)
+  payload_max_chars: 350000
+
 
 reports:
   dir: reports
